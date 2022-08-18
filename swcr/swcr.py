@@ -2,6 +2,7 @@
 import logging
 import pkg_resources
 from os.path import abspath
+from random import shuffle
 try:
     from os import scandir
 except ImportError:
@@ -123,6 +124,7 @@ class CodeWriter(object):
             space_after=2.3, line_spacing=10.5,
             command_chars=None, document=None
     ):
+        self.line_num = 0
         self.font_name = font_name
         self.font_size = font_size
         self.space_before = space_before
@@ -139,6 +141,12 @@ class CodeWriter(object):
         判断是否是空行
         """
         return not bool(line)
+
+    def delete_paragraph(self):
+        paragraph = self.document.paragraphs[0]
+        p = paragraph._element
+        p.getparent().remove(p)
+        p._p = p._element = None
 
     def is_comment_line(self, line):
         line = line.lstrip()  # 去除左侧缩进
@@ -166,6 +174,8 @@ class CodeWriter(object):
         """
         with open(file) as fp:
             for line in fp:
+                if self.line_num>3200:
+                    break
                 line = line.rstrip()
                 if self.is_blank_line(line):
                     continue
@@ -178,6 +188,7 @@ class CodeWriter(object):
                 run = paragraph.add_run(line)
                 run.font.name = self.font_name
                 run.font.size = Pt(self.font_size)
+                self.line_num=self.line_num+1
         return self
 
     def save(self, file):
@@ -264,6 +275,7 @@ def main(
     files = [file for indir in indirs for file in finder.find(
         indir, excludes=excludes
     )]
+    shuffle(files)
 
     # 第二步，逐个把代码文件写入到docx中
     writer = CodeWriter(
@@ -274,6 +286,7 @@ def main(
         space_after=space_after,
         line_spacing=line_spacing
     )
+    writer.delete_paragraph()
     writer.write_header(title)
     for file in files:
         writer.write_file(file)
