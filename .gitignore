@@ -6,3 +6,4 @@ build
 swcr.egg-info
 swcr.spec
 .DS_Store
+output
